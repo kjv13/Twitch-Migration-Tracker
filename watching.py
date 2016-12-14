@@ -1,11 +1,7 @@
 import time
 from irc_connect import IRCConnection
 from api_connect import APIConnection
-from db_connect import SQLConnection
 from db_connect import NoSQLConnection
-
-print('connecting to SQL database')
-con = SQLConnection()
 
 print('connecting to noSQL database')
 nosql_con = NoSQLConnection()
