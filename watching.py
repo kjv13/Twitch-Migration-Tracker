@@ -3,6 +3,7 @@ from irc_connect import IRCConnection
 from api_connect import APIConnection
 from db_connect import SQLConnection
 from db_connect import NoSQLConnection
+from streamer import Streamer
 
 print('connecting to SQL database')
 con = SQLConnection()
