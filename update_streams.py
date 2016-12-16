@@ -1,7 +1,6 @@
 import requests
 import urllib
 import time
-from datetime import datetime
 from db_connect import NoSQLConnection
 
 
@@ -66,7 +65,7 @@ while True:
         json_streams.append(
             {
                 'streamname': stream,
-                'last_updated': datetime.now(),
+                'last_updated': time.time(),
             }
         )
 

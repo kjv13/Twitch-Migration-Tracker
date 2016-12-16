@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta as td
+import time
 from irc_connect import IRCConnection
 from api_connect import APIConnection
 from db_connect import NoSQLConnection
@@ -24,7 +24,7 @@ leave_ttl = 300
 irc_min_users = 100
 
 #  time used to limit twitch API calls to one per second
-last_api_call = datetime.now()
+last_api_call = time.time()
 
 
 def get_users(channel):
@@ -37,9 +37,9 @@ def get_users(channel):
 
     #  if less then a second has passed since the last call wait
     global last_api_call
-    while (datetime.now() - td(seconds=1) < last_api_call):
+    while (time.time() - 1 < last_api_call):
         pass
-    last_api_call = datetime.now()
+    last_api_call = time.time()
 
     print('getting users for: ' + channel)
     users = irc.get_channel_users(channel)
@@ -134,14 +134,14 @@ while True:
             joining_json.append(
                 {
                     'username': user,
-                    'last_updated': datetime.now()
+                    'last_updated': time.time()
                 }
             )
         for user in users_leaving:
             leaving_json.append(
                 {
                     'username': user,
-                    'last_updated': datetime.now()
+                    'last_updated': time.time()
                 }
             )
 
@@ -175,12 +175,12 @@ while True:
                 '$pull': {
                     'joining': {
                         'last_updated': {
-                            '$lte': datetime.now() - td(seconds=join_ttl)
+                            '$lte': time.time() - join_ttl
                         }
                     },
                     'leaving': {
                         'last_updated': {
-                            '$lte': datetime.now() - leave_ttl
+                            '$lte': time.time() - leave_ttl
                         }
                     }
                 }
