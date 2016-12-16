@@ -15,6 +15,9 @@ stream_limit = 20
 # the minimum number of viewers a stream must have to be
 # monitored
 viewer_limit = 200
+# the amount of seconds a stream is kept in the monitoring table before being
+# removed
+stream_ttl = 600
 
 print('connecting to database')
 nosql_con = NoSQLConnection()
@@ -79,6 +82,18 @@ while True:
             }
         },
         True
+    )
+    nosql_con.db[nosql_con.monitoring_collection].update_one(
+        {'list_category': 'main_list'},
+        {
+            '$pull': {
+                'streams': {
+                    'last_updated': {
+                        '$lte': time.time() - stream_ttl
+                    }
+                }
+            }
+        }
     )
 
     time.sleep(update_interval)
