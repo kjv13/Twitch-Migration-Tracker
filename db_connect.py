@@ -30,20 +30,3 @@ class NoSQLConnection:
 
         self.client = MongoClient(self.hostname, 27017)
         self.db = self.client[self.db_name]
-
-    def query_one(self, criteria=None, projection=None):
-        result = self.db[self._collection].find_one(criteria, projection)
-        return result
-
-    def query(self, criteria=None, projection=None):
-        result = self.db[self._collection].find(criteria, projection)
-        return result
-
-    def update(self, criteria, new_values, upsert=True):
-        result = self.db[self._collection].update_one(criteria, new_values,
-                                                      upsert)
-        return result
-
-    def delete(self, criteria):
-        result = self.db[self._collection].delete_many(criteria)
-        return result

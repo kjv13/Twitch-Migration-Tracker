@@ -1,10 +1,10 @@
-import time
+from datetime import datetime, td as td
 from irc_connect import IRCConnection
 from api_connect import APIConnection
 from db_connect import NoSQLConnection
 
 print('connecting to noSQL database')
-nosql_con = NoSQLConnection()
+con = NoSQLConnection()
 
 print('connecting to IRC server')
 irc = IRCConnection()
@@ -24,7 +24,7 @@ leave_ttl = 300
 irc_min_users = 100
 
 #  time used to limit twitch API calls to one per second
-last_api_call = time.time()
+last_api_call = datetime.now()
 
 
 def get_users(channel):
@@ -37,9 +37,9 @@ def get_users(channel):
 
     #  if less then a second has passed since the last call wait
     global last_api_call
-    while ((time.time() - last_api_call) < 1):
+    while (datetime.now() - td(seconds=1) < last_api_call):
         pass
-    last_api_call = time.time()
+    last_api_call = datetime.now()
 
     print('getting users for: ' + channel)
     users = irc.get_channel_users(channel)
@@ -59,7 +59,12 @@ def get_users(channel):
 
 def get_monitored_streams():
     #  get list of channels that are being monitored
-    return map(lambda x: x.get('UserName'), con.query(query))
+    return con.db[con.monitoring_collection].find(
+            projection={
+                '_id': False,
+                'streamname': True,
+            },
+           )
 
 
 while True:
@@ -73,7 +78,7 @@ while True:
 
     streams = get_monitored_streams()
 
-    nosql_con.delete(
+    con.db[con.watching_collection].delete_many(
             {
                 'streamname':
                 {
@@ -97,7 +102,7 @@ while True:
         leaving_json = []
 
         # figure out any new users and any users that have left
-        old_users = nosql_con.query(
+        old_users = con.db[con.watching_collection].find(
                 {
                     # find all documents with 'streamname' = stream
                     'streamname': stream
@@ -125,14 +130,14 @@ while True:
             joining_json.append(
                 {
                     'username': user,
-                    'last_updated': time.time()
+                    'last_updated': datetime.now()
                 }
             )
         for user in users_leaving:
             leaving_json.append(
                 {
                     'username': user,
-                    'last_updated': time.time()
+                    'last_updated': datetime.now()
                 }
             )
 
@@ -140,7 +145,7 @@ while True:
         #  TODO make sure the joining and leaving json appends to the list and
         #  that any elements that have expiredd are removed
         print('updating watching users in the database')
-        result = nosql_con.update(
+        result = con.db[con.watching_collection].update_one(
             {'streamname': stream},
             {
                 '$set': {
@@ -160,18 +165,18 @@ while True:
             }
         )
         #  removing any stale joining or leaving users
-        result = nosql_con.update(
+        result = con.db[con.watching_collection].update_one(
             {'streamname': stream},
             {
                 '$pull': {
                     'joining': {
                         'last_updated': {
-                            '$lte': time.time() - join_ttl
+                            '$lte': datetime.now() - td(seconds=join_ttl)
                         }
                     },
                     'leaving': {
                         'last_updated': {
-                            '$lte': time.time() - leave_ttl
+                            '$lte': datetime.now() - leave_ttl
                         }
                     }
                 }
