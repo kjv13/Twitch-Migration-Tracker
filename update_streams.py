@@ -65,7 +65,7 @@ while True:
         print('\t{0}'.format(stream))
         json_streams.append(
             {
-                'stream': stream,
+                'streamname': stream,
                 'last_updated': datetime.now(),
             }
         )
