@@ -14,17 +14,22 @@ class NoSQLConnection:
         config.read(self.config_file)
 
         try:
-            self._db_name = config.get[self.section_name]['db_name']
-            self._collection = config.get[self.section_name]['collection_name']
-            self._hostname = config.get[self.section_name]['hostname']
-            self._user = config.get[self.section_name]['user']
+            self.db_name = config[self.section_name]['db_name']
+            self.watching_collection = \
+                config[self.section_name]['watching_collection_name']
+            self.monitoring_collection = \
+                config[self.section_name]['monitoring_collection_name']
+            self.migration_collection_name = \
+                config[self.section_name]['migrations_collection_name']
+            self.hostname = config[self.section_name]['hostname']
+            self.user = config[self.section_name]['user']
         except Exception as e:
-            print('one of the options in the config file has no value\n{0}: ' +
-                  '{1}').format(e.errno, e.strerror)
+            print('there was a problem accessing the db.cfg file and reading')
+            print(str(e))
             sys.exit()
 
-        self.client = MongoClient(self._hostname, 27017)
-        self.db = self.client[self._db_name]
+        self.client = MongoClient(self.hostname, 27017)
+        self.db = self.client[self.db_name]
 
     def query_one(self, criteria=None, projection=None):
         result = self.db[self._collection].find_one(criteria, projection)

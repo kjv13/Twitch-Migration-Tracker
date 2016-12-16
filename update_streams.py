@@ -1,6 +1,7 @@
 import requests
 import urllib
 import time
+from datetime import datetime
 from db_connect import NoSQLConnection
 
 
@@ -34,7 +35,7 @@ def get_top_streams(game_name):
     print(('requesting top {0} streams for game {1} from' +
           'API').format(stream_limit, game_name))
     game_name = game_name
-    payload = urllib.urlencode({
+    payload = urllib.parse.urlencode({
                 'game': game_name,
                 'limit': str(stream_limit),
                 'stream_type': 'live',
@@ -57,16 +58,21 @@ while True:
     for game in r['top']:
         game_name = game['game']['name']
         get_top_streams(game_name)
-    escaped_streams = '(%(' + ')s, True), (%('.join(streams) + ')s, True)'
-    json_streams = {}
+
     print('adding these streams to database to be monitored...')
     for stream in streams:
         print('\t{0}'.format(stream))
-        json_streams[stream] = stream
-    query = """
-    INSERT INTO Users (UserName, Monitor)
-    VALUES {0}
-    ON DUPLICATE KEY UPDATE Monitor=True;
-    """.format(escaped_streams)
-    nosql_con.query(query, json_streams)
+        nosql_con.db[nosql_con.monitoring_collection].update_one(
+            {'streamname': stream},
+            {
+                '$setOnInsert': {
+                    'streamname': stream,
+                },
+                '$set': {
+                    'last_updated': datetime.now(),
+                },
+            },
+            True
+        )
+
     time.sleep(update_interval)
