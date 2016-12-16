@@ -30,7 +30,7 @@ class IRCConnection:
         config.read(self.config_file)
 
         try:
-            PASSWORD = config.get[self.section_name]['oauth']
+            PASSWORD = config[self.section_name]['oauth']
         except Exception as e:
             print('one of the options in the config file has no value\n{0}:' +
                   '{1}').format(e.errno, e.strerror)
@@ -47,7 +47,7 @@ class IRCConnection:
         """
         sends the given command to the IRC server
         """
-        self.IRC.send(command + '\r\n')
+        self.IRC.send((command + '\r\n').encode())
 
     def _parse_line(self, line):
         """
