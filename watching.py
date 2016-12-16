@@ -1,4 +1,4 @@
-from datetime import datetime, td as td
+from datetime import datetime, timedelta as td
 from irc_connect import IRCConnection
 from api_connect import APIConnection
 from db_connect import NoSQLConnection
@@ -60,9 +60,12 @@ def get_users(channel):
 def get_monitored_streams():
     #  get list of channels that are being monitored
     return con.db[con.monitoring_collection].find(
-            projection={
+            {
+                'list_category': 'main_list',
+            },
+            {
                 '_id': False,
-                'streamname': True,
+                'streams': True
             },
            )
 
@@ -77,6 +80,7 @@ while True:
     """)
 
     streams = get_monitored_streams()
+    streams = [stream['streamname'] for stream in streams[0]['streams']]
 
     con.db[con.watching_collection].delete_many(
             {
