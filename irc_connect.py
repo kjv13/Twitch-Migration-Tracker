@@ -82,13 +82,15 @@ class IRCConnection:
         self.send_data('JOIN #{0}'.format(channel))
         users = []
         readbuffer = ''
+        debug_lines = ''
         while True:
             readbuffer = readbuffer +\
                 str(self.IRC.recv(BUFFER_SIZE).decode('UTF-8'))
             temp = str.split(readbuffer, '\n')
             readbuffer = temp.pop()
             for line in temp:
-                print(line)
+                debug_lines += line + '\n'
+                # print(line)
                 line = str.rstrip(line)
                 try:
                     _, command, args = self._parse_line(line)
@@ -98,10 +100,15 @@ class IRCConnection:
                     print(e)
                     return []
 
-                #  if this is a response to NAMES
-                if command == '353':
-                    users += ((args[0].split(':', 1))[1].split())
-                if 'End of /NAMES list' in args[0]:
-                    print('test1')
-                    self.send_data('PART #{0}'.format(channel))
-                    return users
+                try:
+                    #  if this is a response to NAMES
+                    if command == '353':
+                        users += ((args[0].split(':', 1))[1].split())
+                    if 'End of /NAMES list' in args[0]:
+                        self.send_data('PART #{0}'.format(channel))
+                        return users
+                except Exception as e:
+                    print('\n\n')
+                    print(debug_lines)
+                    raise e
+                    print('\n\n')
