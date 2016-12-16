@@ -59,10 +59,6 @@ def get_users(channel):
 
 def get_monitored_streams():
     #  get list of channels that are being monitored
-    query = """
-    SELECT UserName FROM Users
-    WHERE Monitor=True;
-    """
     return map(lambda x: x.get('UserName'), con.query(query))
 
 
@@ -103,9 +99,11 @@ while True:
         # figure out any new users and any users that have left
         old_users = nosql_con.query(
                 {
+                    # find all documents with 'streamname' = stream
                     'streamname': stream
                 },
                 {
+                    # project only the watching field
                     '_id': False,
                     'watching': True
                 }
