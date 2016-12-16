@@ -60,19 +60,26 @@ while True:
         get_top_streams(game_name)
 
     print('adding these streams to database to be monitored...')
+    json_streams = []
     for stream in streams:
         print('\t{0}'.format(stream))
-        nosql_con.db[nosql_con.monitoring_collection].update_one(
-            {'streamname': stream},
+        json_streams.append(
             {
-                '$setOnInsert': {
-                    'streamname': stream,
-                },
-                '$set': {
-                    'last_updated': datetime.now(),
-                },
-            },
-            True
+                'stream': stream,
+                'last_updated': datetime.now(),
+            }
         )
+
+    nosql_con.db[nosql_con.monitoring_collection].update_one(
+        {'list_category': 'main_list'},
+        {
+            '$push': {
+                'streams': {
+                    '$each': json_streams,
+                }
+            }
+        },
+        True
+    )
 
     time.sleep(update_interval)
