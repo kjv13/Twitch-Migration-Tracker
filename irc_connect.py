@@ -1,12 +1,11 @@
 import sys
 import socket
-import string
 import configparser
 
 # Constants
-SERVER = 'irc.twitch.tv'
+SERVER = 'irc.chat.twitch.tv'
 PORT = 6667
-NICKNAME = 'mroseman_bot'
+NICKNAME = 'mroseman'
 PASSWORD = ''
 
 BUFFER_SIZE = 2048
@@ -47,7 +46,7 @@ class IRCConnection:
         """
         sends the given command to the IRC server
         """
-        self.IRC.send((command + '\r\n').encode())
+        self.IRC.send(bytes(command + '\r\n', 'UTF-8'))
 
     def _parse_line(self, line):
         """
@@ -82,14 +81,15 @@ class IRCConnection:
         #  join the IRC channel
         self.send_data('JOIN #{0}'.format(channel))
         users = []
+        readbuffer = ''
         while True:
-            readbuffer = ''
-            readbuffer = readbuffer + self.IRC.recv(BUFFER_SIZE)
-            temp = string.split(readbuffer, '\n')
+            readbuffer = readbuffer +\
+                str(self.IRC.recv(BUFFER_SIZE).decode('UTF-8'))
+            temp = str.split(readbuffer, '\n')
             readbuffer = temp.pop()
             for line in temp:
                 print(line)
-                line = string.rstrip(line)
+                line = str.rstrip(line)
                 try:
                     _, command, args = self._parse_line(line)
                 except IRCBadMessage as e:
