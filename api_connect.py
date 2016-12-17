@@ -47,9 +47,7 @@ class APIConnection:
         keeps sending if there is a 503 result (times out for 'timeout'
         seconds
         """
-        # ensure a second has passed since the last api call
-        while time.time() - self.last_api_call < 1:
-            continue
+        time.sleep(max(1 - (time.time() - self.last_api_call), 0))
 
         for i in range(0, num_tries):
             result = requests.get(request, params=params,
