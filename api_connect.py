@@ -48,7 +48,7 @@ class APIConnection:
         seconds
         """
         # ensure a second has passed since the last api call
-        while time.time() - 1 > self.last_api_call:
+        while time.time() - self.last_api_call < 1:
             continue
 
         for i in range(0, num_tries):
