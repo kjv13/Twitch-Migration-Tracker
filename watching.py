@@ -30,6 +30,45 @@ irc_lock = threading.RLock()
 api_lock = threading.RLock()
 
 
+def main():
+    while True:
+        print("""
+
+        -------------------------------------------------------
+        streams updated now starting from beginning
+        -------------------------------------------------------
+
+        """)
+
+        streams = get_monitored_streams()
+        streams = [stream['streamname'] for stream in streams[0]['streams']]
+
+        con.db[con.watching_collection].delete_many(
+                {
+                    'streamname':
+                    {
+                        #  delete any documents where the streamname is not
+                        #  present in streams
+                        '$nin': streams
+                    }
+                }
+        )
+
+        threads = []
+        print('\n\n{}\n\n'.format(threading.active_count()))
+        for stream in streams:
+            t = threading.Thread(target=update_stream, name=stream+'-thread',
+                                 args=(stream,))
+            print('{} threads created'.format(len(streams)))
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+            print('\n\nthread joined back into main thread\n\n')
+        print('all threads joined back into main thread')
+
+
 def update_stream(stream):
     with print_lock:
         print('Entering thread: ' + stream)
@@ -181,39 +220,5 @@ def get_monitored_streams():
            )
 
 
-while True:
-    print("""
-
-    -------------------------------------------------------
-    streams updated now starting from beginning
-    -------------------------------------------------------
-
-    """)
-
-    streams = get_monitored_streams()
-    streams = [stream['streamname'] for stream in streams[0]['streams']]
-
-    con.db[con.watching_collection].delete_many(
-            {
-                'streamname':
-                {
-                    #  delete any documents where the streamname is not present
-                    #  in streams
-                    '$nin': streams
-                }
-            }
-    )
-
-    threads = []
-    print('\n\n{}\n\n'.format(threading.active_count()))
-    for stream in streams:
-        t = threading.Thread(target=update_stream, name=stream+'-thread',
-                             args=(stream,))
-        print('{} threads created'.format(len(streams)))
-        threads.append(t)
-        t.start()
-
-    for t in threads:
-        t.join()
-        print('\n\nthread joined back into main thread\n\n')
-    print('all threads joined back into main thread')
+if __name__ == '__main__':
+    main()

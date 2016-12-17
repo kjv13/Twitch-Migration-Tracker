@@ -26,6 +26,55 @@ streams = []
 headers = {'Client-ID': 'sdu5b9af6eoqgkxdkb0qrkd9fgcp6ch'}
 
 
+def main():
+    while True:
+        print('requesting top {0} games from API'.format(game_limit))
+        payload = {'limit': str(game_limit)}
+        r = requests.get('https://api.twitch.tv/kraken/games/top',
+                         params=payload, headers=headers).json()
+
+        for game in r['top']:
+            game_name = game['game']['name']
+            get_top_streams(game_name)
+
+        print('adding these streams to database to be monitored...')
+        json_streams = []
+        for stream in streams:
+            print('\t{0}'.format(stream))
+            json_streams.append(
+                {
+                    'streamname': stream,
+                    'last_updated': time.time(),
+                }
+            )
+
+        nosql_con.db[nosql_con.monitoring_collection].update_one(
+            {'list_category': 'main_list'},
+            {
+                '$push': {
+                    'streams': {
+                        '$each': json_streams,
+                    }
+                }
+            },
+            True
+        )
+        nosql_con.db[nosql_con.monitoring_collection].update_one(
+            {'list_category': 'main_list'},
+            {
+                '$pull': {
+                    'streams': {
+                        'last_updated': {
+                            '$lte': time.time() - stream_ttl
+                        }
+                    }
+                }
+            }
+        )
+
+        time.sleep(update_interval)
+
+
 def get_top_streams(game_name):
     """
     find the top channels for a specific game on twitch
@@ -51,49 +100,5 @@ def get_top_streams(game_name):
             streams.append(stream['channel']['name'])
 
 
-while True:
-    print('requesting top {0} games from API'.format(game_limit))
-    payload = {'limit': str(game_limit)}
-    r = requests.get('https://api.twitch.tv/kraken/games/top',
-                     params=payload, headers=headers).json()
-
-    for game in r['top']:
-        game_name = game['game']['name']
-        get_top_streams(game_name)
-
-    print('adding these streams to database to be monitored...')
-    json_streams = []
-    for stream in streams:
-        print('\t{0}'.format(stream))
-        json_streams.append(
-            {
-                'streamname': stream,
-                'last_updated': time.time(),
-            }
-        )
-
-    nosql_con.db[nosql_con.monitoring_collection].update_one(
-        {'list_category': 'main_list'},
-        {
-            '$push': {
-                'streams': {
-                    '$each': json_streams,
-                }
-            }
-        },
-        True
-    )
-    nosql_con.db[nosql_con.monitoring_collection].update_one(
-        {'list_category': 'main_list'},
-        {
-            '$pull': {
-                'streams': {
-                    'last_updated': {
-                        '$lte': time.time() - stream_ttl
-                    }
-                }
-            }
-        }
-    )
-
-    time.sleep(update_interval)
+if __name__ == '__main__':
+    main()

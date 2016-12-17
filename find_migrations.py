@@ -11,6 +11,16 @@ check_freq = 300
 related_limit = 300
 
 
+def main():
+    last_migration_check = time.time() - check_freq
+    while True:
+        time.sleep(max(check_freq - (time.time() - last_migration_check), 0))
+        raw_data = get_raw_migration_data()
+        data = format_raw_migration_data(raw_data)
+        insert_into_db(data)
+        last_migration_check = time.time()
+
+
 def get_raw_migration_data():
     # get list of streams being recorded in watching collection
     streams = con.db[con.watching_collection].find(
@@ -101,10 +111,5 @@ def insert_into_db(formatted_data):
                     )
 
 
-last_migration_check = time.time() - check_freq
-while True:
-    time.sleep(max(check_freq - (time.time() - last_migration_check), 0))
-    raw_data = get_raw_migration_data()
-    data = format_raw_migration_data(raw_data)
-    insert_into_db(data)
-    last_migration_check = time.time()
+if __name__ == '__main__':
+    main()
