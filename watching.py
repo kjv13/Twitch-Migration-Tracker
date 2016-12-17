@@ -16,10 +16,10 @@ api = APIConnection()
 
 # Constants
 #  the time to live for the joining user elements in database
-join_ttl = 300
+join_ttl = 600
 #  this is the number of seconds before leave elements are
 #  removed
-leave_ttl = 300
+leave_ttl = 600
 
 #  if the number of users from IRC is less then 100 then
 # the result is double checked with an API call
