@@ -4,6 +4,7 @@ from irc_connect import IRCConnection
 from api_connect import APIConnection
 from db_connect import NoSQLConnection
 from stream import Stream
+import time
 
 print('connecting to noSQL database')
 con = NoSQLConnection()
@@ -77,7 +78,12 @@ def main():
 
         print('now uploading to db')
         for l in watching:
-            con.db[con.migration_collection].insert_one(
+            con.db[con.viewercount_collection].insert_one(
+                {
+                    'streamname': l.name,
+                    'user_count': len(l.watching),
+                    'time': time.time()
+                })
             for j in watching:
                 if l.name == j.name:
                     continue
@@ -86,6 +92,13 @@ def main():
                        min(l.leaving[user], j.joining[user])) < related_limit:
                         print(('user {0} left stream {1} and went to stream ' +
                               ' {2}').format(user, l.name, j.name))
+                        con.db[con.migration_collection].insert_one(
+                            {
+                                'username': user,
+                                'from_stream': l.name,
+                                'to_stream': j.name,
+                                'time': time.time()
+                            })
 
 
 def update_stream(streamname):
