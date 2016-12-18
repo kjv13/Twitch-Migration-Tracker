@@ -25,6 +25,9 @@ leave_ttl = 600
 # the result is double checked with an API call
 irc_min_users = 100
 
+# the limit for joining and leaving entries to be considered related
+related_limit = 300
+
 print_lock = threading.RLock()
 irc_lock = threading.RLock()
 api_lock = threading.RLock()
@@ -71,6 +74,18 @@ def main():
             t.join()
             print('\n\nthread joined back into main thread\n\n')
         print('all threads joined back into main thread')
+
+        print('now uploading to db')
+        for l in watching:
+            con.db[con.migration_collection_name].insert_one(
+            for j in watching:
+                if l.name == j.name:
+                    continue
+                for user in set(l.leaving.keys()) & set(j.joining.keys()):
+                    if (max(l.leaving[user], j.joining[user]) -
+                       min(l.leaving[user], j.joining[user])) < related_limit:
+                        print(('user {0} left stream {1} and went to stream ' +
+                              ' {2}').format(user, l.name, j.name))
 
 
 def update_stream(streamname):
