@@ -77,7 +77,7 @@ def main():
 
         print('now uploading to db')
         for l in watching:
-            con.db[con.migration_collection_name].insert_one(
+            con.db[con.migration_collection].insert_one(
             for j in watching:
                 if l.name == j.name:
                     continue

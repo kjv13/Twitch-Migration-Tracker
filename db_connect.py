@@ -15,12 +15,12 @@ class NoSQLConnection:
 
         try:
             self.db_name = config[self.section_name]['db_name']
-            self.watching_collection = \
-                config[self.section_name]['watching_collection_name']
             self.monitoring_collection = \
                 config[self.section_name]['monitoring_collection_name']
-            self.migration_collection_name = \
+            self.migration_collection = \
                 config[self.section_name]['migrations_collection_name']
+            self.viewercount_collection = \
+                config[self.section_name]['viewercount_collection_name']
             self.hostname = config[self.section_name]['hostname']
             self.user = config[self.section_name]['user']
         except Exception as e:
