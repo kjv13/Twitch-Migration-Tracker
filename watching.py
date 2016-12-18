@@ -1,10 +1,9 @@
 # import pdb
-import time
 import threading
 from irc_connect import IRCConnection
 from api_connect import APIConnection
 from db_connect import NoSQLConnection
-from streamer import Streamer
+from stream import Stream
 
 print('connecting to noSQL database')
 con = NoSQLConnection()
@@ -30,8 +29,12 @@ print_lock = threading.RLock()
 irc_lock = threading.RLock()
 api_lock = threading.RLock()
 
+watching = []
+
 
 def main():
+    global watching
+
     while True:
         print("""
 
@@ -44,16 +47,16 @@ def main():
         streams = get_monitored_streams()
         streams = [stream['streamname'] for stream in streams[0]['streams']]
 
-        con.db[con.watching_collection].delete_many(
-                {
-                    'streamname':
-                    {
-                        #  delete any documents where the streamname is not
-                        #  present in streams
-                        '$nin': streams
-                    }
-                }
-        )
+        # eliminate any Streams in watching where stream.name is not in streams
+        watching = list(filter(lambda s: s.name in streams, watching))
+        # add any streams in streams but not in watching
+        # by creating a new Stream object
+        for stream in streams:
+            if stream not in list(map(lambda s: s.name, watching)):
+                watching.append(Stream(stream))
+
+        # at this point the streams in watching should be the same streams in
+        # streams
 
         threads = []
         print('\n\n{}\n\n'.format(threading.active_count()))
@@ -70,111 +73,33 @@ def main():
         print('all threads joined back into main thread')
 
 
-def update_stream(stream):
+def update_stream(streamname):
+    global watching
+
+    stream = list(filter(lambda s: s.name == streamname, watching))
+    if len(stream) != 1:
+        print(('{} is not in watching. Something wen\'' +
+              'wrong').format(streamname))
+        return
+    stream = stream[0]
+
     with print_lock:
-        print('Entering thread: ' + stream)
-    users = get_users(stream)
+        print('Entering thread: ' + stream.name)
+    users = get_users(stream.name)
     #  if the users list is empty something wen't wrong
     if len(users) == 0:
         return
 
-    users_joining = []
-    users_leaving = []
-    #  really these are an array of json objects
-    joining_json = []
-    leaving_json = []
+    stream.update_watching(set(users))
+    stream.remove_stale_joiners(join_ttl)
+    stream.remove_stale_leavers(leave_ttl)
 
-    # figure out any new users and any users that have left
-    old_users = con.db[con.watching_collection].find(
-            {
-                # find all documents with 'streamname' = stream
-                'streamname': stream
-            },
-            {
-                # project only the watching field
-                '_id': False,
-                'watching': True
-            }
-    )
-    #  if this stream is in the database get joining and leaving users
-    if old_users.count() == 1:
-        old_users = set(old_users[0]['watching'])
-        new_users = set(users)
-        #  users in new_users that aren't in old_users
-        users_joining = new_users - old_users
-        #  users in old_users that are no longer in new_users
-        users_leaving = old_users - new_users
+    for i, s in enumerate(watching):
+        if s.name == streamname:
+            watching[i] = stream
 
-    # with print_lock:
-    #     print('\njoining users in {0}: {1}'.format(self.stream,
-    #           users_joining))
-    #     print('leaving users in {0}: {1}\n'.format(self.stream,
-    #           users_leaving))
-
-    #  create the new joining and leave json to add to the database
-    for user in users_joining:
-        joining_json.append(
-            {
-                'username': user,
-                'last_updated': time.time()
-            }
-        )
-    for user in users_leaving:
-        leaving_json.append(
-            {
-                'username': user,
-                'last_updated': time.time()
-            }
-        )
-
-    #  add these users to this streams document
-    #  TODO make sure the joining and leaving json appends to the list and
-    #  that any elements that have expiredd are removed
-
-    # with print_lock:
-    #     print('updating watching users in the database')
-
-    con.db[con.watching_collection].update_one(
-        {'streamname': stream},
-        {
-            '$set': {
-                'watching': users,
-            },
-            '$push': {
-                'joining': {
-                    '$each': joining_json,
-                },
-                'leaving': {
-                    '$each': leaving_json
-                }
-            },
-            '$setOnInsert': {
-                'streamname': stream,
-            }
-        },
-        True
-    )
-    #  removing any stale joining or leaving users
-    con.db[con.watching_collection].update_one(
-        {'streamname': stream},
-        {
-            '$pull': {
-                'joining': {
-                    'last_updated': {
-                        '$lte': time.time() - join_ttl
-                    }
-                },
-                'leaving': {
-                    'last_updated': {
-                        '$lte': time.time() - leave_ttl
-                    }
-                }
-            }
-        },
-        True
-    )
     with print_lock:
-        print('Exiting thread: ' + stream)
+        print('Exiting thread: ' + stream.name)
         print('\n\n{}\n\n'.format(threading.active_count()))
 
 
