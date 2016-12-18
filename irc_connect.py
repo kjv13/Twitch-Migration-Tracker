@@ -1,12 +1,11 @@
 import sys
 import socket
-import string
 import configparser
 
 # Constants
-SERVER = 'irc.twitch.tv'
+SERVER = 'irc.chat.twitch.tv'
 PORT = 6667
-NICKNAME = 'mroseman_bot'
+NICKNAME = 'mroseman'
 PASSWORD = ''
 
 BUFFER_SIZE = 2048
@@ -30,7 +29,7 @@ class IRCConnection:
         config.read(self.config_file)
 
         try:
-            PASSWORD = config.get[self.section_name]['oauth']
+            PASSWORD = config[self.section_name]['oauth']
         except Exception as e:
             print('one of the options in the config file has no value\n{0}:' +
                   '{1}').format(e.errno, e.strerror)
@@ -47,7 +46,7 @@ class IRCConnection:
         """
         sends the given command to the IRC server
         """
-        self.IRC.send(command + '\r\n')
+        self.IRC.send(bytes(command + '\r\n', 'UTF-8'))
 
     def _parse_line(self, line):
         """
@@ -82,14 +81,17 @@ class IRCConnection:
         #  join the IRC channel
         self.send_data('JOIN #{0}'.format(channel))
         users = []
+        readbuffer = ''
+        debug_lines = ''
         while True:
-            readbuffer = ''
-            readbuffer = readbuffer + self.IRC.recv(BUFFER_SIZE)
-            temp = string.split(readbuffer, '\n')
+            readbuffer = readbuffer +\
+                str(self.IRC.recv(BUFFER_SIZE).decode('UTF-8'))
+            temp = str.split(readbuffer, '\n')
             readbuffer = temp.pop()
             for line in temp:
-                print(line)
-                line = string.rstrip(line)
+                debug_lines += line + '\n'
+                # print(line)
+                line = str.rstrip(line)
                 try:
                     _, command, args = self._parse_line(line)
                 except IRCBadMessage as e:
@@ -98,10 +100,15 @@ class IRCConnection:
                     print(e)
                     return []
 
-                #  if this is a response to NAMES
-                if command == '353':
-                    users += ((args[0].split(':', 1))[1].split())
-                if 'End of /NAMES list' in args[0]:
-                    print('test1')
-                    self.send_data('PART #{0}'.format(channel))
-                    return users
+                try:
+                    #  if this is a response to NAMES
+                    if command == '353':
+                        users += ((args[0].split(':', 1))[1].split())
+                    if 'End of /NAMES list' in args[0]:
+                        self.send_data('PART #{0}'.format(channel))
+                        return users
+                except Exception as e:
+                    print('\n\n')
+                    print(debug_lines)
+                    raise e
+                    print('\n\n')

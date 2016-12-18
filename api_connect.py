@@ -8,7 +8,7 @@ import configparser
 viewer_limit = 200
 # the number of seconds that will be waited if a 503 response is
 # gotten
-timeout = 10
+timeout = 2
 # the number of times to retry the request before giving up
 num_tries = 3
 
@@ -39,12 +39,16 @@ class APIConnection:
 
         self.log = open('watching_log.txt', 'w')
 
+        self.last_api_call = time.time() - 1
+
     def _send_request(self, request, params=None):
         """
         sends an api request with params and headers
         keeps sending if there is a 503 result (times out for 'timeout'
         seconds
         """
+        time.sleep(max(1 - (time.time() - self.last_api_call), 0))
+
         for i in range(0, num_tries):
             result = requests.get(request, params=params,
                                   headers=self.headers)
