@@ -1,4 +1,3 @@
 . venv/bin/activate
-python update_streams.py &
-python watching.py &
-python find_migrations.py
+python scraper/update_streams.py &
+python scraper/watching.py
