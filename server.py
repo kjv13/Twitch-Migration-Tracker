@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import request
 from flask import render_template
 from db_connect import NoSQLConnection
 
@@ -15,7 +16,11 @@ def index():
 
 @app.route("/streams/viewercount")
 def get_viewercount():
-    pass
+    start_time = request.args.get('start', 0, type=int)
+    end_time = request.args.get('end', 0, type=int)
+    print("{0} - {0}".format(start_time, end_time))
+    return start_time
+    # return a json of streamname and viewercount
 
 
 if __name__ == "__main__":
