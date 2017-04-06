@@ -1,7 +1,7 @@
 import requests
 import urllib
 import time
-from db_connect import NoSQLConnection
+from lib.db_connect import NoSQLConnection
 
 
 # Constants
@@ -72,6 +72,8 @@ def main():
             }
         )
 
+        print(('\nmonitored_streams updated, now waiting {}' +
+               ' seconds\n').format(update_interval))
         time.sleep(update_interval)
 
 
@@ -87,11 +89,11 @@ def get_top_streams(game_name):
           'API').format(stream_limit, game_name))
     game_name = game_name
     payload = urllib.parse.urlencode({
-                'game': game_name,
-                'limit': str(stream_limit),
-                'stream_type': 'live',
-                'language': 'en'
-              })
+        'game': game_name,
+        'limit': str(stream_limit),
+        'stream_type': 'live',
+        'language': 'en'
+    })
     r = requests.get('https://api.twitch.tv/kraken/streams',
                      params=payload, headers=headers).json()
     for stream in r['streams']:

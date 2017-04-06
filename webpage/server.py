@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import request
 from flask import render_template
-from db_connect import NoSQLConnection
+from ..scraper.lib.db_connect import NoSQLConnection
 
 app = Flask(__name__)
 

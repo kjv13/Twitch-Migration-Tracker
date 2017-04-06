@@ -2,6 +2,7 @@ import sys
 import requests
 import time
 import configparser
+import os
 
 # the mimnimum number of viewers a stream must have to be
 # monitored
@@ -22,12 +23,15 @@ class APIConnection:
     Used to connect to the twitch api server and send http requests to it
     """
 
-    config_file = 'api.cfg'
+    current_dir = os.path.dirname(__file__)
+    config_rel_path = '../config/api.cfg'
+    config_abs_path = os.path.join(current_dir, config_rel_path)
+
     section_name = 'Connection Authentication'
 
     def __init__(self):
         config = configparser.ConfigParser()
-        config.read(self.config_file)
+        config.read(self.config_abs_path)
 
         try:
             self._client_id = config[self.section_name]['client_id']
@@ -94,11 +98,11 @@ class APIConnection:
         """
         streams = []
         payload = {
-                    'game': game,
-                    'limit': str(limit),
-                    'stream_type': 'live',
-                    'language': 'en'
-                }
+            'game': game,
+            'limit': str(limit),
+            'stream_type': 'live',
+            'language': 'en'
+        }
         result = self._send_request('https://api.twitch.tv/kraken/streams',
                                     payload)
 

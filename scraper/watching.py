@@ -1,8 +1,8 @@
 # import pdb
 import threading
-from irc_connect import IRCConnection
-from api_connect import APIConnection
-from db_connect import NoSQLConnection
+from lib.irc_connect import IRCConnection
+from lib.api_connect import APIConnection
+from lib.db_connect import NoSQLConnection
 from stream import Stream
 import time
 
@@ -65,7 +65,7 @@ def main():
         threads = []
         print('\n\n{}\n\n'.format(threading.active_count()))
         for stream in streams:
-            t = threading.Thread(target=update_stream, name=stream+'-thread',
+            t = threading.Thread(target=update_stream, name=stream + '-thread',
                                  args=(stream,))
             print('{} threads created'.format(len(streams)))
             threads.append(t)
@@ -164,14 +164,14 @@ def get_users(channel):
 def get_monitored_streams():
     #  get list of channels that are being monitored
     return con.db[con.monitoring_collection].find(
-            {
-                'list_category': 'main_list',
-            },
-            {
-                '_id': False,
-                'streams': True
-            },
-           )
+        {
+            'list_category': 'main_list',
+        },
+        {
+            '_id': False,
+            'streams': True
+        },
+    )
 
 
 if __name__ == '__main__':
