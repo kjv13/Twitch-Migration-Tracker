@@ -1,4 +1,5 @@
 import sys
+import os
 import socket
 import configparser
 
@@ -21,12 +22,15 @@ class IRCConnection:
     different channels
     """
 
-    config_file = 'irc.cfg'
+    current_dir = os.path.dirname(__file__)
+    config_rel_path = '../config/irc.cfg'
+    config_abs_path = os.path.join(current_dir, config_rel_path)
+
     section_name = 'Connection Authentication'
 
     def __init__(self):
         config = configparser.ConfigParser()
-        config.read(self.config_file)
+        config.read(self.config_abs_path)
 
         try:
             PASSWORD = config[self.section_name]['oauth']
