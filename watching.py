@@ -1,4 +1,3 @@
-# import pdb
 import threading
 from lib.irc_connect import IRCConnection
 from lib.api_connect import APIConnection
@@ -41,11 +40,9 @@ def main():
 
     while True:
         print("""
-
         -------------------------------------------------------
         streams updated now starting from beginning
         -------------------------------------------------------
-
         """)
 
         streams = get_monitored_streams()
@@ -63,21 +60,23 @@ def main():
         # streams
 
         threads = []
-        print('\n\n{}\n\n'.format(threading.active_count()))
+        # print('\n{}\n'.format(threading.active_count()))
         for stream in streams:
             t = threading.Thread(target=update_stream, name=stream + '-thread',
                                  args=(stream,))
-            print('{} threads created'.format(len(streams)))
+            # print('{} threads created'.format(len(streams)), end='\r')
             threads.append(t)
             t.start()
 
         for t in threads:
             t.join()
-            print('\n\nthread joined back into main thread\n\n')
+            print(('{} threads created : {} threads remain')
+                  .format(len(streams), threading.active_count()), end='\r')
         print('all threads joined back into main thread')
 
         print('now uploading to db')
         for l in watching:
+            #  record current viewcount
             con.db[con.viewercount_collection].insert_one(
                 {
                     'streamname': l.name,
@@ -87,7 +86,10 @@ def main():
             for j in watching:
                 if l.name == j.name:
                     continue
+                #  for every user that has left l and joined j
                 for user in set(l.leaving.keys()) & set(j.joining.keys()):
+                    # TODO what does the max and min mean here. Find out
+                    # structure of stream
                     if (max(l.leaving[user], j.joining[user]) -
                        min(l.leaving[user], j.joining[user])) < related_limit:
                         print(('user {0} left stream {1} and went to stream ' +
@@ -104,31 +106,36 @@ def main():
 def update_stream(streamname):
     global watching
 
+    #  check that this stream is in the list of streams to watch
     stream = list(filter(lambda s: s.name == streamname, watching))
     if len(stream) != 1:
-        print(('{} is not in watching. Something wen\'' +
+        print(('{} is not in watching. Something went ' +
               'wrong').format(streamname))
         return
     stream = stream[0]
 
-    with print_lock:
-        print('Entering thread: ' + stream.name)
+    # with print_lock:
+    #     print('Entering thread: ' + stream.name)
     users = get_users(stream.name)
-    #  if the users list is empty something wen't wrong
+    #  if the users list is empty something wen't wrong because there should
+    #  always be at least one watcher
     if len(users) == 0:
         return
 
+    #  TODO possibly include remove_stale_joiners and remove_stale_leavers in
+    #  the update_watching function
     stream.update_watching(set(users))
     stream.remove_stale_joiners(join_ttl)
     stream.remove_stale_leavers(leave_ttl)
 
+    #  replace this stream in watching
     for i, s in enumerate(watching):
         if s.name == streamname:
             watching[i] = stream
 
-    with print_lock:
-        print('Exiting thread: ' + stream.name)
-        print('\n\n{}\n\n'.format(threading.active_count()))
+    # with print_lock:
+    #     print('Exiting thread: ' + stream.name)
+    #     print('\n\n{}\n\n'.format(threading.active_count()))
 
 
 def get_users(channel):

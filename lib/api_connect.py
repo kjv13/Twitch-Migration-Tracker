@@ -122,7 +122,7 @@ class APIConnection:
         result = self._send_request(url)
 
         usercount = result['chatter_count']
-        print('usercount = {0}'.format(usercount))
+        # print('usercount = {0}'.format(usercount))
         if (usercount > 0):
             result = result['chatters']
 
