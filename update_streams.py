@@ -8,10 +8,10 @@ from lib.db_connect import NoSQLConnection
 # time in seconds between top stream updates
 update_interval = 60
 # the number of top games to get
-game_limit = 20
+game_limit = 10
 # the number of streams to get for each game (as long as
 # they are over the viewer limit
-stream_limit = 20
+stream_limit = 1
 # the minimum number of viewers a stream must have to be
 # monitored
 viewer_limit = 200
@@ -36,6 +36,18 @@ def main():
         for game in r['top']:
             game_name = game['game']['name']
             get_top_streams(game_name)
+
+        print('WARNING: ABOUT TO DELETE ALL MONITORED STREAMS AND STARTING' +
+              'AFRESH. THIS WAS IMPLEMENTED FOR TESTING PURPOSES.')
+        # NOTE This is for testing purposes, delete for production
+        nosql_con.db[nosql_con.monitoring_collection].update(
+            {'list_category': 'main_list'},
+            {
+                '$set': {
+                    'streams': []
+                }
+            }
+        )
 
         print('adding these streams to database to be monitored...')
         json_streams = []
