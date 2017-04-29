@@ -11,7 +11,7 @@ update_interval = 60
 game_limit = 10
 # the number of streams to get for each game (as long as
 # they are over the viewer limit
-stream_limit = 1
+stream_limit = 15
 # the minimum number of viewers a stream must have to be
 # monitored
 viewer_limit = 200

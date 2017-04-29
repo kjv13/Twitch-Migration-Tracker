@@ -28,6 +28,13 @@ irc_min_users = 20
 # the limit for joining and leaving entries to be considered related
 related_limit = 300
 
+# the limit for two migrations to be stored in the database
+# if there is another migration where the user leaves and joins the same
+# streams within leaving_overlap_limit seconds of the current migration
+# then the current migration won't be added
+leaving_overlap_limit = 300
+joining_overlap_limit = 300
+
 print_lock = threading.RLock()
 irc_lock = threading.RLock()
 api_lock = threading.RLock()
@@ -39,6 +46,7 @@ def main():
     global watching
 
     for i in range(10):
+        start_time = time.time()
         print("""
         -------------------------------------------------------
         streams updated now starting from beginning
@@ -90,11 +98,30 @@ def main():
                 for user in set(l.leaving.keys()) & set(j.joining.keys()):
                     if (max(l.leaving[user], j.joining[user]) -
                        min(l.leaving[user], j.joining[user])) < related_limit:
+                        # # selects any documents with the same user moving from
+                        # matching_migration = con.db[con.migration_collection].find_one(
+                        #     {
+                        #         '$or': [
+                        #             {
+                        #                 'username': user,
+                        #                 'from_stream': l.name,
+                        #                 'to_stream': j.name,
+                        #                 'leave_time': {
+                        #                     '$gt': l.leaving[user] - leaving_overlap_limit
+                        #                 }
+                        #             },
+                        #             {
+                        #                 'username': user,
+                        #                 'from_stream': l.name,
+                        #                 'to_stream': j.name,
+                        #                 'join_time': {
+                        #                     '$gt': j.joining[user] - joining_overlap_limit
+                        #                 }
+                        #             }
+                        #         ]
+                        #     })
                         print(('user {0} left stream {1} and went to stream ' +
-                              '{2}').format(user, l.name, j.name))
-                        # TODO also check to make sure that an entry for this
-                        # user leaving l.name and joining j.name hasn't happened
-                        # in the past x min
+                               '{2}').format(user, l.name, j.name))
                         con.db[con.migration_collection].insert_one(
                             {
                                 'username': user,
@@ -103,6 +130,8 @@ def main():
                                 'leave_time': l.leaving[user],
                                 'join_time': j.joining[user]
                             })
+        loop_time = time.time() - start_time
+        print('\nLoop took {} seconds to complete\n'.format(loop_time))
 
 
 def update_stream(streamname):
