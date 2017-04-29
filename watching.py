@@ -23,7 +23,7 @@ leave_ttl = 600
 
 #  if the number of users from IRC is less then 100 then
 # the result is double checked with an API call
-irc_min_users = 100
+irc_min_users = 20
 
 # the limit for joining and leaving entries to be considered related
 related_limit = 300
@@ -38,7 +38,7 @@ watching = []
 def main():
     global watching
 
-    while True:
+    for i in range(10):
         print("""
         -------------------------------------------------------
         streams updated now starting from beginning
@@ -88,12 +88,16 @@ def main():
                     continue
                 #  for every user that has left l and joined j
                 for user in set(l.leaving.keys()) & set(j.joining.keys()):
-                    # TODO what does the max and min mean here. Find out
-                    # structure of stream
                     if (max(l.leaving[user], j.joining[user]) -
                        min(l.leaving[user], j.joining[user])) < related_limit:
                         print(('user {0} left stream {1} and went to stream ' +
-                              ' {2}').format(user, l.name, j.name))
+                              '{2}').format(user, l.name, j.name))
+                        # TODO the current time is probably not very accurate,
+                        # maybe either average of leaving and joining, or just
+                        # store both values
+                        # TODO also check to make sure that an entry for this
+                        # user leaving l.name and joining j.name hasn't happened
+                        # in the past x min
                         con.db[con.migration_collection].insert_one(
                             {
                                 'username': user,
