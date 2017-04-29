@@ -92,9 +92,6 @@ def main():
                        min(l.leaving[user], j.joining[user])) < related_limit:
                         print(('user {0} left stream {1} and went to stream ' +
                               '{2}').format(user, l.name, j.name))
-                        # TODO the current time is probably not very accurate,
-                        # maybe either average of leaving and joining, or just
-                        # store both values
                         # TODO also check to make sure that an entry for this
                         # user leaving l.name and joining j.name hasn't happened
                         # in the past x min
@@ -103,7 +100,8 @@ def main():
                                 'username': user,
                                 'from_stream': l.name,
                                 'to_stream': j.name,
-                                'time': time.time()
+                                'leave_time': l.leaving[user],
+                                'join_time': j.joining[user]
                             })
 
 
