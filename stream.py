@@ -18,8 +18,10 @@ class Stream():
         @return: None
         """
         old_watchers = self.watching
-        leaving = old_watchers - new_watchers
-        joining = new_watchers - old_watchers
+        # users in old_watchers but not in new_watchers would have left
+        leaving = old_watchers.difference(new_watchers)
+        # users in new watchers but weren't in old_watchers would have joined
+        joining = new_watchers.difference(old_watchers)
         self.watching = new_watchers
         self.update_joining(joining)
         self.update_leaving(leaving)
@@ -72,12 +74,8 @@ class Stream():
         database. Any ones older than this are removed
         @return: None
         """
-        # iterate over the entire dictionary
-        for joiner in self.joining:
-            # if the time that has passed since last_updated is > ttl
-            if time.time() - self.joining[joiner] > ttl:
-                # remove this user from the joiners dict
-                del self.joining[joiner]
+        self.joining = {joiner: join_time for joiner, join_time in
+                        self.joining.items() if time.time() - join_time < ttl}
 
     def remove_stale_leavers(self, ttl):
         """
@@ -87,9 +85,5 @@ class Stream():
         database. Any ones older than this are removed
         @return: None
         """
-        # iterate over the entire dictionary
-        for leaver in self.leaving:
-            # if the time that has passed since last_updated is > ttl
-            if time.time() - self.leaving[leaver] > ttl:
-                # remove this user from the joiners dict
-                del self.leaving[leaver]
+        self.leaving = {leaver: leave_time for leaver, leave_time in
+                        self.leaving.items() if time.time() - leave_time < ttl}
