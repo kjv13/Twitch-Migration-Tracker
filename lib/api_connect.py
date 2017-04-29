@@ -9,7 +9,7 @@ import os
 viewer_limit = 200
 # the number of seconds that will be waited if a 503 response is
 # gotten
-timeout = 2
+timeout = 1
 # the number of times to retry the request before giving up
 num_tries = 3
 
@@ -43,7 +43,7 @@ class APIConnection:
 
         self.log = open('watching_log.txt', 'w')
 
-        self.last_api_call = time.time() - 1
+        self.last_failed_api_call = time.time() - 1
 
     def _send_request(self, request, params=None):
         """
@@ -51,19 +51,21 @@ class APIConnection:
         keeps sending if there is a 503 result (times out for 'timeout'
         seconds
         """
-        time.sleep(max(1 - (time.time() - self.last_api_call), 0))
-
         for i in range(0, num_tries):
+            if time.time() - self.last_failed_api_call < timeout:
+                print('\n\nTEST!\n\n')
+            time.sleep(max(timeout - (time.time() - self.last_failed_api_call), 0))
+
             result = requests.get(request, params=params,
                                   headers=self.headers)
             if self._valid_result(result):
                 return result.json()
-            else:
-                print(('\n{0} request failed, waiting {1} seconds to try' +
-                      'again\n').format(i, timeout))
-            time.sleep(timeout)
+
+            print(('\n{0} request failed, waiting {1} seconds to try' +
+                   'again\n').format(i, timeout))
+            self.last_failed_api_call = time.time()
         raise APIBadRequest('after {0} tries the api continues to send bad' +
-                            'results')
+                            'results'.format(num_tries))
 
     def _valid_result(self, result):
         """
