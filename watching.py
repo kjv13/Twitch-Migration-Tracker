@@ -35,6 +35,10 @@ related_limit = 300
 leaving_overlap_limit = 300
 joining_overlap_limit = 300
 
+# This controls the delay in thread start in order to more evenly distribute
+# work
+thread_start_delay = 0.2
+
 print_lock = threading.RLock()
 irc_lock = threading.RLock()
 api_lock = threading.RLock()
@@ -75,6 +79,7 @@ def main():
         # print('{} threads created'.format(len(streams)), end='\r')
         threads.append(t)
         t.start()
+        time.sleep(thread_start_delay)
 
     for t in threads:
         t.join()
