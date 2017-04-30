@@ -8,7 +8,7 @@ from lib.db_connect import NoSQLConnection
 # time in seconds between top stream updates
 update_interval = 60
 # the number of top games to get
-game_limit = 10
+game_limit = 15
 # the number of streams to get for each game (as long as
 # they are over the viewer limit
 stream_limit = 15
