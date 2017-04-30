@@ -45,6 +45,8 @@ watching = []
 def main():
     global watching
 
+    loop_times = []
+
     for i in range(10):
         start_time = time.time()
         print("""
@@ -131,7 +133,14 @@ def main():
                                 'join_time': j.joining[user]
                             })
         loop_time = time.time() - start_time
+        loop_times.append(loop_time)
         print('\nLoop took {} seconds to complete\n'.format(loop_time))
+
+    total_time = 0
+    for i, loop_time in enumerate(loop_times):
+        print('loop {0} took {1} seconds to complete'.format(i + 1, loop_time))
+        total_time += loop_time
+    print('total time took {} seconds'.format(total_time))
 
 
 def update_stream(streamname):
