@@ -140,7 +140,7 @@ def main():
     for i, loop_time in enumerate(loop_times):
         print('loop {0} took {1} seconds to complete'.format(i + 1, loop_time))
         total_time += loop_time
-    print('total time took {} seconds'.format(total_time))
+    print('total time took {0} seconds for {1} streams'.format(total_time, len(streams)))
 
 
 def update_stream(streamname):
