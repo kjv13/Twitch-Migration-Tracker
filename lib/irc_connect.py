@@ -1,3 +1,4 @@
+import pdb
 import sys
 import os
 import socket
@@ -42,11 +43,11 @@ class IRCConnection:
         self.IRC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.IRC.connect((SERVER, PORT))
 
-        self.send_data('PASS %s' % PASSWORD)
-        self.send_data('NICK %s' % NICKNAME)
-        self.send_data('CAP REQ :twitch.tv/membership')
+        self._send_data('PASS %s' % PASSWORD)
+        self._send_data('NICK %s' % NICKNAME)
+        self._send_data('CAP REQ :twitch.tv/membership')
 
-    def send_data(self, command):
+    def _send_data(self, command):
         """
         sends the given command to the IRC server
         """
@@ -82,8 +83,10 @@ class IRCConnection:
         gets a list of users from the IRC NAMES command
         @return: an array of users from the irc (may be just OPs)
         """
+        #  clear the IRC buffer
+        temp = self.IRC.recv(BUFFER_SIZE)
         #  join the IRC channel
-        self.send_data('JOIN #{0}'.format(channel))
+        self._send_data('JOIN #{0}'.format(channel))
         users = []
         readbuffer = ''
         debug_lines = ''
@@ -91,17 +94,23 @@ class IRCConnection:
             readbuffer = readbuffer +\
                 str(self.IRC.recv(BUFFER_SIZE).decode('UTF-8'))
             temp = str.split(readbuffer, '\n')
+            # If there isn't a \n char at the end of the line then the whole
+            # line wasn't received so it is popped and included in the next
+            # iteration
             readbuffer = temp.pop()
             for line in temp:
                 debug_lines += line + '\n'
-                # print(line)
                 line = str.rstrip(line)
+                # print(line)
                 try:
                     _, command, args = self._parse_line(line)
                 except IRCBadMessage as e:
+                    pdb.set_trace()
                     print('bad IRC message received, returning empty user' +
                           'list')
                     print(e)
+                    print()
+                    print(debug_lines)
                     return []
 
                 try:
@@ -109,7 +118,7 @@ class IRCConnection:
                     if command == '353':
                         users += ((args[0].split(':', 1))[1].split())
                     if 'End of /NAMES list' in args[0]:
-                        self.send_data('PART #{0}'.format(channel))
+                        self._send_data('PART #{0}'.format(channel))
                         return users
                 except Exception as e:
                     print('\n\n')
