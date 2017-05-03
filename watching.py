@@ -170,7 +170,8 @@ def record_migrations(from_stream, to_stream):
 
 def add_migration_to_db(from_stream, to_stream, user, leave_time, join_time):
     """
-
+    adds the migration from from_stream to to_stream of user user, that left at leave_time and joined
+    at join_time to the database. First checks to see if there is another migration within a certain time
     """
     # If there is no document for migrations from from_stream to to_stream
     # create it
@@ -183,35 +184,49 @@ def add_migration_to_db(from_stream, to_stream, user, leave_time, join_time):
             '$set': {
                 'from_stream': from_stream,
                 'to_stream': to_stream
+            },
+            '$setOnInsert': {
+                'migrations': []
             }
         },
         upsert=True)
 
     # Insert this new migration of user from from_stream to to_stream into the
     # list of migrations.
-    # If there is already a migration with either the leaving time or joining time
+    # only insert if there is no document in migrations with either leave_time or
+    # join_time within leaving_overlap_limit or joining_overlap_limit seconds respectively
+    # of this leave_time and join_time
     con.db[con.migration_collection].update_one(
         {
             'from_stream': from_stream,
             'to_stream': to_stream,
-            'migrations': {
-                '$elemMatch': {
-                    '$or': [
-                        {
-                            'username': user,
-                            'leave_time': {
-                                '$lt': leave_time - leaving_overlap_limit
-                            }
-                        },
-                        {
-                            'username': user,
-                            'join_time': {
-                                '$lt': join_time - joining_overlap_limit
-                            }
+            # only add this migration when there is no previous document
+            # that is within joining_overlap_limit or leaving_overlap_limit
+            '$nor': [
+                {
+                    'migrations': {
+                        # select documents where leave_time is within leaving_overlap_limit
+                        # or join_time is within joining_overlap_limit of this new docs
+                        # leave and join time
+                        '$elemMatch': {
+                            '$or': [
+                                {
+                                    'username': user,
+                                    'leave_time': {
+                                        '$gte': leave_time - leaving_overlap_limit
+                                    }
+                                },
+                                {
+                                    'username': user,
+                                    'join_time': {
+                                        '$gte': join_time - joining_overlap_limit
+                                    }
+                                }
+                            ]
                         }
-                    ]
+                    }
                 }
-            }
+            ]
         },
         {
             '$push': {
