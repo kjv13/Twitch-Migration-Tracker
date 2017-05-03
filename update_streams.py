@@ -40,7 +40,7 @@ def main():
         print('WARNING: ABOUT TO DELETE ALL MONITORED STREAMS AND STARTING' +
               'AFRESH. THIS WAS IMPLEMENTED FOR TESTING PURPOSES.')
         # NOTE This is for testing purposes, delete for production
-        nosql_con.db[nosql_con.monitoring_collection].update(
+        nosql_con.monitoring_collection.update(
             {'list_category': 'main_list'},
             {
                 '$set': {
@@ -60,7 +60,7 @@ def main():
                 }
             )
 
-        nosql_con.db[nosql_con.monitoring_collection].update_one(
+        nosql_con.monitoring_collection.update_one(
             {'list_category': 'main_list'},
             {
                 '$push': {
@@ -71,7 +71,7 @@ def main():
             },
             True
         )
-        nosql_con.db[nosql_con.monitoring_collection].update_one(
+        nosql_con.monitoring_collection.update_one(
             {'list_category': 'main_list'},
             {
                 '$pull': {

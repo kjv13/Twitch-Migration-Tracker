@@ -141,7 +141,7 @@ def record_viewcount(stream):
     records the current viewcount of stream in the database
     """
     #  record current viewcount
-    con.db[con.viewercount_collection].insert_one(
+    con.viewercount_collection.insert_one(
         {
             'streamname': stream.name,
             'user_count': len(stream.watching),
@@ -175,7 +175,7 @@ def add_migration_to_db(from_stream, to_stream, user, leave_time, join_time):
     """
     # If there is no document for migrations from from_stream to to_stream
     # create it
-    con.db[con.migration_collection].update_one(
+    con.migrations_collection.update_one(
         {
             'from_stream': from_stream,
             'to_stream': to_stream
@@ -196,7 +196,7 @@ def add_migration_to_db(from_stream, to_stream, user, leave_time, join_time):
     # only insert if there is no document in migrations with either leave_time or
     # join_time within leaving_overlap_limit or joining_overlap_limit seconds respectively
     # of this leave_time and join_time
-    con.db[con.migration_collection].update_one(
+    con.migrations_collection.update_one(
         {
             'from_stream': from_stream,
             'to_stream': to_stream,
@@ -272,7 +272,7 @@ def get_users(channel):
 
 def get_monitored_streams():
     #  get list of channels that are being monitored
-    return con.db[con.monitoring_collection].find(
+    return con.monitoring_collection.find(
         {
             'list_category': 'main_list',
         },
