@@ -105,6 +105,7 @@ def update_stream(streamname):
 
         # with print_lock:
         #     print('Entering thread: ' + stream.name)
+
         users = get_users(stream.name)
         #  if the users list is empty something wen't wrong because there should
         #  always be at least one watcher
@@ -159,38 +160,69 @@ def record_migrations(from_stream, to_stream):
         # the difference between leaving and joining time
         migration_time = abs(from_stream.leaving[user] - to_stream.joining[user])
         if migration_time < related_limit:
-            # # selects any documents with the same user moving from
-            # matching_migration = con.db[con.migration_collection].find_one(
-            #     {
-            #         '$or': [
-            #             {
-            #                 'username': user,
-            #                 'from_stream': from_stream.name,
-            #                 'to_stream': to_stream.name,
-            #                 'leave_time': {
-            #                     '$gt': from_stream.leaving[user] - leaving_overlap_limit
-            #                 }
-            #             },
-            #             {
-            #                 'username': user,
-            #                 'from_stream': from_stream.name,
-            #                 'to_stream': to_stream.name,
-            #                 'join_time': {
-            #                     '$gt': to_stream.joining[user] - joining_overlap_limit
-            #                 }
-            #             }
-            #         ]
-            #     })
+
             print(('user {0} left stream {1} and went to stream ' +
                    '{2}').format(user, from_stream.name, to_stream.name))
-            con.db[con.migration_collection].insert_one(
-                {
+            add_migration_to_db(from_stream.name, to_stream.name, user,
+                                from_stream.leaving[user],
+                                to_stream.joining[user])
+
+
+def add_migration_to_db(from_stream, to_stream, user, leave_time, join_time):
+    """
+
+    """
+    # If there is no document for migrations from from_stream to to_stream
+    # create it
+    con.db[con.migration_collection].update_one(
+        {
+            'from_stream': from_stream,
+            'to_stream': to_stream
+        },
+        {
+            '$set': {
+                'from_stream': from_stream,
+                'to_stream': to_stream
+            }
+        },
+        upsert=True)
+
+    # Insert this new migration of user from from_stream to to_stream into the
+    # list of migrations.
+    # If there is already a migration with either the leaving time or joining time
+    con.db[con.migration_collection].update_one(
+        {
+            'from_stream': from_stream,
+            'to_stream': to_stream,
+            'migrations': {
+                '$elemMatch': {
+                    '$or': [
+                        {
+                            'username': user,
+                            'leave_time': {
+                                '$lt': leave_time - leaving_overlap_limit
+                            }
+                        },
+                        {
+                            'username': user,
+                            'join_time': {
+                                '$lt': join_time - joining_overlap_limit
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            '$push': {
+                'migrations': {
                     'username': user,
-                    'from_stream': from_stream.name,
-                    'to_stream': to_stream.name,
-                    'leave_time': from_stream.leaving[user],
-                    'join_time': to_stream.joining[user]
-                })
+                    'leave_time': leave_time,
+                    'join_time': join_time
+                }
+            }
+        },
+        upsert=False)
 
 
 def get_users(channel):
