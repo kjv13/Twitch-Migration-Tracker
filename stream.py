@@ -9,6 +9,15 @@ class Stream():
         self.joining = {}
         self.leaving = {}
 
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.name)
+
     def update_watching(self, current_watchers):
         """
         updates the watching key in watching. This completely replaces
