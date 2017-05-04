@@ -1,17 +1,16 @@
-import requests
-import urllib
-import time
 from lib.db_connect import NoSQLConnection
+from lib.api_connect import APIConnection
+import time
 
 
 # Constants
 # time in seconds between top stream updates
 update_interval = 60
 # the number of top games to get
-game_limit = 15
+game_limit = 5
 # the number of streams to get for each game (as long as
 # they are over the viewer limit
-stream_limit = 15
+stream_limit = 5
 # the minimum number of viewers a stream must have to be
 # monitored
 viewer_limit = 200
@@ -22,20 +21,17 @@ stream_ttl = 600
 print('connecting to database')
 nosql_con = NoSQLConnection()
 
-streams = []
-headers = {'Client-ID': 'sdu5b9af6eoqgkxdkb0qrkd9fgcp6ch'}
+print('creating API connection')
+api = APIConnection()
 
 
 def main():
     while True:
+        # clear streams for the new current games
+        streams = []
         print('requesting top {0} games from API'.format(game_limit))
-        payload = {'limit': str(game_limit)}
-        r = requests.get('https://api.twitch.tv/kraken/games/top',
-                         params=payload, headers=headers).json()
-
-        for game in r['top']:
-            game_name = game['game']['name']
-            get_top_streams(game_name)
+        for game in api.get_top_games(game_limit):
+            streams += api.get_top_streams(game, stream_limit, viewer_limit)
 
         print('WARNING: ABOUT TO DELETE ALL MONITORED STREAMS AND STARTING' +
               'AFRESH. THIS WAS IMPLEMENTED FOR TESTING PURPOSES.')
@@ -60,6 +56,7 @@ def main():
                 }
             )
 
+        # add these streams to the main list of streams to monitor
         nosql_con.monitoring_collection.update_one(
             {'list_category': 'main_list'},
             {
@@ -71,6 +68,9 @@ def main():
             },
             True
         )
+
+        # remove any stale streams that havn't been added for at
+        # least stream_ttl seconds
         nosql_con.monitoring_collection.update_one(
             {'list_category': 'main_list'},
             {
@@ -87,31 +87,6 @@ def main():
         print(('\nmonitored_streams updated, now waiting {}' +
                ' seconds\n').format(update_interval))
         time.sleep(update_interval)
-
-
-def get_top_streams(game_name):
-    """
-    find the top channels for a specific game on twitch
-    @param game_name: the name of the game to search
-    @return: no return, simply adds streams to global streams list
-    """
-    global streams
-
-    print(('requesting top {0} streams for game {1} from' +
-          'API').format(stream_limit, game_name))
-    game_name = game_name
-    payload = urllib.parse.urlencode({
-        'game': game_name,
-        'limit': str(stream_limit),
-        'stream_type': 'live',
-        'language': 'en'
-    })
-    r = requests.get('https://api.twitch.tv/kraken/streams',
-                     params=payload, headers=headers).json()
-    for stream in r['streams']:
-        #  if the stream has enough viewers to be monitored
-        if stream['viewers'] >= viewer_limit:
-            streams.append(stream['channel']['name'])
 
 
 if __name__ == '__main__':

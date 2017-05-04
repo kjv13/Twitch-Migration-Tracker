@@ -94,14 +94,23 @@ class APIConnection:
 
         return games
 
-    def get_top_streams(self, game, limit):
+    def get_top_streams(self, game_name, stream_limit, viewer_limit):
         """
         returns the 'limit' top streams for a game 'game'
+        find the top channels for a specific game on twitch
+        @param game_name: the name of the game to search
+        @param stream_limit: the maximum number of streams to get for
+            each game
+        @param viewer_limit: only get streams with viewers over this
+            limit
+        @return: return this list of stream names
         """
+        print(('requesting top {0} streams for game {1} from' +
+               'API').format(stream_limit, game_name))
         streams = []
         payload = {
-            'game': game,
-            'limit': str(limit),
+            'game': game_name,
+            'limit': str(stream_limit),
             'stream_type': 'live',
             'language': 'en'
         }

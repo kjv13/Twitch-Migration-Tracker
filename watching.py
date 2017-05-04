@@ -94,7 +94,7 @@ def main():
 def update_stream(streamname):
     global watching
 
-    for i in range(10):
+    while True:
         #  check that this stream is in the list of streams to watch
         stream = list(filter(lambda s: s.name == streamname, watching))
         if len(stream) != 1:
