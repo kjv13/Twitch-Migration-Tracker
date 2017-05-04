@@ -41,8 +41,6 @@ class APIConnection:
                   '{1}').format(e.errno, e.strerror)
             sys.exit()
 
-        self.log = open('watching_log.txt', 'w')
-
         self.last_failed_api_call = time.time() - 1
 
     def _send_request(self, request, params=None):
@@ -74,9 +72,9 @@ class APIConnection:
         if result.status_code == 200:
             return True
         else:
-            self.log.write(str(time.time()) +
-                           ': ' + str(result.status_code) +
-                           '\n')
+            # self.log.write(str(time.time()) +
+            #                ': ' + str(result.status_code) +
+            #                '\n')
             print(result.status_code)
             return False
 

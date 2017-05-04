@@ -7,10 +7,10 @@ import time
 # time in seconds between top stream updates
 update_interval = 60
 # the number of top games to get
-game_limit = 5
+game_limit = 15
 # the number of streams to get for each game (as long as
 # they are over the viewer limit
-stream_limit = 5
+stream_limit = 15
 # the minimum number of viewers a stream must have to be
 # monitored
 viewer_limit = 200

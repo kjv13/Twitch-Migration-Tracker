@@ -83,8 +83,8 @@ def main():
 
     for t in threads:
         t.join()
-        print(('{} threads created : {} threads remain')
-              .format(len(streams), threading.active_count()), end='\r')
+        print(('\n\n{} threads created : {} threads remain\n')
+              .format(len(streams), threading.active_count()))
     print('all threads joined back into main thread')
 
     run_time = time.time() - start_time
