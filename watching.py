@@ -4,6 +4,7 @@ from lib.api_connect import APIConnection
 from lib.db_connect import NoSQLConnection
 from stream import Stream
 import time
+# import pdb
 
 print('connecting to noSQL database')
 con = NoSQLConnection()
@@ -161,8 +162,8 @@ def record_migrations(from_stream, to_stream):
         migration_time = abs(from_stream.leaving[user] - to_stream.joining[user])
         if migration_time < related_limit:
 
-            print(('user {0} left stream {1} and went to stream ' +
-                   '{2}').format(user, from_stream.name, to_stream.name))
+            # print(('user {0} left stream {1} and went to stream ' +
+            #        '{2}').format(user, from_stream.name, to_stream.name))
             add_migration_to_db(from_stream.name, to_stream.name, user,
                                 from_stream.leaving[user],
                                 to_stream.joining[user])
@@ -173,6 +174,9 @@ def add_migration_to_db(from_stream, to_stream, user, leave_time, join_time):
     adds the migration from from_stream to to_stream of user user, that left at leave_time and joined
     at join_time to the database. First checks to see if there is another migration within a certain time
     """
+    # if user == 'mroseman_bot':
+    #     pdb.set_trace()
+
     # If there is no document for migrations from from_stream to to_stream
     # create it
     con.migrations_collection.update_one(

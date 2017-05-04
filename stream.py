@@ -9,20 +9,20 @@ class Stream():
         self.joining = {}
         self.leaving = {}
 
-    def update_watching(self, new_watchers):
+    def update_watching(self, current_watchers):
         """
         updates the watching key in watching. This completely replaces
         watching
-        @param new_watchers: the new set of watchers this stream object with
+        @param current_watchers: the new set of watchers this stream object with
         record
         @return: None
         """
         old_watchers = self.watching
-        # users in old_watchers but not in new_watchers would have left
-        leaving = old_watchers.difference(new_watchers)
-        # users in new watchers but weren't in old_watchers would have joined
-        joining = new_watchers.difference(old_watchers)
-        self.watching = new_watchers
+        # users in old_watchers but not in current_watchers would have left
+        leaving = old_watchers.difference(current_watchers)
+        # users in current_watchers but weren't in old_watchers would have joined
+        joining = current_watchers.difference(old_watchers)
+        self.watching = current_watchers
         self.update_joining(joining)
         self.update_leaving(leaving)
 
