@@ -6,7 +6,7 @@ This is done by creating a thread running for each monitored stream and having t
 
 Every time a new list of viewers is gotten the thread determines who has joined and who has left the stream. Then if there is a user who has left one stream and joined another within some time limit, it is considered a migration and stored in the database.
 
-### Prerequisites
+## Prerequisites
 
 This project runs on python 3.6 and uses mongodb as a database
 
@@ -39,6 +39,70 @@ This project runs on python 3.6 and uses mongodb as a database
 	`oauth: oauth:abcdefghijklmnopqrstuvwxyz1234567890`
 1. create the database by running `python create_db.py` back in the root directory
 1. running `python update_streams.py` will populate the database with which streams to monitor and running `python watching.py` will begin watching for any migrations amongst those monitored streams
+
+## Database Structure
+
+There are 3 collections in the database
+1. monitored_streams
+    ```
+    {
+        _id: unique id,
+        list_category: main_list,
+        streams: [
+            {
+                streamname: foo,
+                last_updated: seconds since epoch
+            },
+            ...
+        ]
+    }
+    ```
+1. stream_migrations
+    ```
+    {
+        _id: unique id,
+        from_stream: foo,
+        to_stream: bar,
+        migrations: [
+            {
+                username: user who changed streams,
+                leave_time: seconds since epoch,
+                join_time: seconds since epoch
+            },
+            {
+                username: ...,
+                leave_time: ...,
+                join_time: ...
+            },
+            ...
+        ]
+    },
+    {
+        _id: unique id,
+        from_stream: bar,
+        to_stream: bar,
+        migrations: [
+            ...
+        ]
+    },
+    ...
+    ```
+1. stream_viewcount
+    ```
+    {
+        _id: unique id,
+        streamname: foo,
+        user_count: number of users at this time
+        time: seconds since epoch
+    },
+    {
+        _id: unique id,
+        streamname: bar,
+        user_count: ...,
+        time: ...
+    },
+    ...
+    ```
 
 ## Testing
 
