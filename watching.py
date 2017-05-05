@@ -40,78 +40,73 @@ joining_overlap_limit = 300
 # work
 thread_start_delay = 0.2
 
+# the number of seconds between updating monitored_streams
+check_monitored_streams_interval = 10
+
 print_lock = threading.RLock()
 irc_lock = threading.RLock()
 api_lock = threading.RLock()
 
-watching = []
+monitored_streams = set()
 
 
 def main():
-    global watching
+    global monitored_streams
 
-    start_time = time.time()
+    # get initial monitored_streams
+    monitored_streams = get_monitored_streams()
+    last_monitored_streams_update = time.time()
 
-    print("""
-    -------------------------------------------------------
-    streams updated now starting from beginning
-    -------------------------------------------------------
-    """)
-
-    streams = get_monitored_streams()
-    streams = [stream['streamname'] for stream in streams[0]['streams']]
-
-    # eliminate any Streams in watching where stream.name is not in streams
-    watching = list(filter(lambda s: s.name in streams, watching))
-    # add any streams in streams but not in watching
-    # by creating a new Stream object
-    for stream in streams:
-        if stream not in list(map(lambda s: s.name, watching)):
-            watching.append(Stream(stream))
-
-    # at this point the streams in watching should be the same streams in
-    # streams
-
+    # for each stream in monitored_streams create a thread for it
     threads = []
-    # print('\n{}\n'.format(threading.active_count()))
-    for stream in streams:
-        t = threading.Thread(target=update_stream, name=stream + '-thread',
+    for stream in monitored_streams:
+        t = threading.Thread(target=update_stream, name=stream.name + '-thread',
                              args=(stream,))
-        # print('{} threads created'.format(len(streams)), end='\r')
         threads.append(t)
         t.start()
         time.sleep(thread_start_delay)
 
-    for t in threads:
-        t.join()
-        print(('\n\n{} threads created : {} threads remain\n')
-              .format(len(streams), threading.active_count()))
-    print('all threads joined back into main thread')
+    # continuously update monitored_streams and for any new streams create a new thread
+    # also join any dead threads, indicating that that stream is no longer in
+    # monitored_streams
+    while True:
+        # if check_monitored_streams_interval seconds have passed since the last check
+        if time.time() - last_monitored_streams_update >= check_monitored_streams_interval:
+            current_monitored_streams = get_monitored_streams()
+            # streams that are in the current_monitored_streams but not in
+            # the old monitored_streams need to have a thread created
+            new_monitored_streams = current_monitored_streams.difference(monitored_streams)
+            # update the old monitored_streams to match the current_monitored_streams
+            monitored_streams = current_monitored_streams
 
-    run_time = time.time() - start_time
-    print('\nIt took {0} seconds to run on {1} streams'.format(run_time, len(streams)))
+            for stream in new_monitored_streams:
+                t = threading.Thread(target=update_stream, name=stream.name + '-thread',
+                                     args=(stream,))
+                threads.append(t)
+                t.start()
+                time.sleep(thread_start_delay)
+
+        # also check for any threads that aren't running any more and join them back into the main thread
+        for thread in threads:
+            if not thread.isAlive():
+                thread.join()
+                print('thread {} has stopped being monitored and has been removed'.format(thread.name))
+                threads.remove(thread)
 
 
-def update_stream(streamname):
-    global watching
+def update_stream(stream):
+    global monitored_streams
+
+    with print_lock:
+        print('Entering thread: ' + stream.name)
 
     while True:
         #  check that this stream is in the list of streams to watch
-        stream = list(filter(lambda s: s.name == streamname, watching))
-        if len(stream) != 1:
-            print(('{} is not in watching. Something went ' +
-                   'wrong').format(streamname))
+        if stream not in monitored_streams:
+            # this thread is no longer in monitored_streams and should kill itself
             return
-        stream = stream[0]
-
-        # with print_lock:
-        #     print('Entering thread: ' + stream.name)
 
         users = get_users(stream.name)
-        #  if the users list is empty something wen't wrong because there should
-        #  always be at least one watcher
-        if len(users) == 0:
-            return
 
         #  TODO possibly include remove_stale_joiners and remove_stale_leavers in
         #  the update_watching function
@@ -119,15 +114,13 @@ def update_stream(streamname):
         stream.remove_stale_joiners(join_ttl)
         stream.remove_stale_leavers(leave_ttl)
 
-        #  replace this stream in watching
-        for i, s in enumerate(watching):
-            if s.name == streamname:
-                watching[i] = stream
+        #  replace this stream in monitored_streams
+        monitored_streams.add(stream)
 
         record_viewcount(stream)
 
-        for j in watching:
-            if j.name == streamname:
+        for j in monitored_streams:
+            if j.name == stream.name:
                 continue
             # only record migrations from this stream to all other streams
             record_migrations(stream, j)
@@ -248,7 +241,7 @@ def get_users(channel):
     """
     takes in a channel name and gathers the list of users currently signed into
     twitch and watching that channel
-    @return: returns an array of strings that are users watching this channel
+    @return: returns a set of strings that are users watching this channel
     """
     global headers
     global irc_lock
@@ -271,12 +264,21 @@ def get_users(channel):
             #       'with API call').format(irc_min_users))
             users = api.get_users(channel)
 
+    if len(users) == 0:
+        # TODO throw exception or print warning
+        pass
+
     return users
 
 
 def get_monitored_streams():
+    """
+    get the list of channels that are being monitored
+    @return: a set of Stream objects representing the
+        streams that should be monitored
+    """
     #  get list of channels that are being monitored
-    return con.monitoring_collection.find(
+    streams = con.monitoring_collection.find(
         {
             'list_category': 'main_list',
         },
@@ -285,6 +287,7 @@ def get_monitored_streams():
             'streams': True
         },
     )
+    return set([Stream(stream['streamname']) for stream in streams[0]['streams']])
 
 
 if __name__ == '__main__':

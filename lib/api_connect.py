@@ -125,8 +125,9 @@ class APIConnection:
     def get_users(self, channel):
         """
         gets all the viewers of a specific channel
+        @return: a set of users currently in the chat for the channel
         """
-        users = []
+        users = set()
         url = 'https://tmi.twitch.tv/group/user/{0}/chatters'.format(channel)
         result = self._send_request(url)
 
@@ -136,14 +137,14 @@ class APIConnection:
             result = result['chatters']
 
             if result['moderators']:
-                users = result['moderators']
+                users |= set(result['moderators'])
             if result['staff']:
-                users = users + result['staff']
+                users |= set(result['staff'])
             if result['admins']:
-                users = users + result['admins']
+                users |= set(result['admins'])
             if result['global_mods']:
-                users = users + result['global_mods']
+                users |= set(result['global_mods'])
             if result['viewers']:
-                users = users + result['viewers']
+                users |= set(result['viewers'])
 
         return users

@@ -81,13 +81,13 @@ class IRCConnection:
     def get_channel_users(self, channel):
         """
         gets a list of users from the IRC NAMES command
-        @return: an array of users from the irc (may be just OPs)
+        @return: a set of users from the irc (may be just OPs)
         """
         #  clear the IRC buffer
         temp = self.IRC.recv(BUFFER_SIZE)
         #  join the IRC channel
         self._send_data('JOIN #{0}'.format(channel))
-        users = []
+        users = set()
         readbuffer = ''
         debug_lines = ''
         while True:
@@ -116,7 +116,7 @@ class IRCConnection:
                 try:
                     #  if this is a response to NAMES
                     if command == '353':
-                        users += ((args[0].split(':', 1))[1].split())
+                        users |= set((args[0].split(':', 1))[1].split())
                     if 'End of /NAMES list' in args[0]:
                         self._send_data('PART #{0}'.format(channel))
                         return users
