@@ -15,32 +15,31 @@ irc = IRCConnection()
 print('creating API connection')
 api = APIConnection()
 
-# Constants
-#  the time to live for the joining user elements in database
+# after this many seconds a user will not be considered joining anymore
 join_ttl = 600
-#  this is the number of seconds before leave elements are
-#  removed
+# after this many seconds a user will not be considered leaving anymore
 leave_ttl = 600
 
-#  if the number of users from IRC is less then 100 then
-# the result is double checked with an API call
+# If irc get_users returns a list of users less than this then it is assumed to be just
+# OPs and an API call is used instead
 irc_min_users = 20
 
-# the limit for joining and leaving entries to be considered related
+# the maximum number of seconds a leave time and join time can be apart to be considered
+# a migration
 related_limit = 300
 
-# the limit for two migrations to be stored in the database
-# if there is another migration where the user leaves and joins the same
-# streams within leaving_overlap_limit seconds of the current migration
-# then the current migration won't be added
+# when a migration is being added to the database if there is already an identical
+# migration with the leaving time within this number of seconds then it is not added
 leaving_overlap_limit = 300
+# when a migration is being added to the database if there is already an identical
+# migration with the joining time within this number of seconds then it is not added
 joining_overlap_limit = 300
 
-# This controls the delay in thread start in order to more evenly distribute
-# work
+# number of seconds between thread creation
 thread_start_delay = 0.2
 
-# the number of seconds between updating monitored_streams
+# the number of seconds between checks to the monitored_streams collection in the db
+# to update threads on which streams to monitor
 check_monitored_streams_interval = 10
 
 print_lock = threading.RLock()

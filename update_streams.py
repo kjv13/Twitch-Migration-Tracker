@@ -3,19 +3,20 @@ from lib.api_connect import APIConnection
 import time
 
 
-# Constants
-# time in seconds between top stream updates
+# the number of seconds update_streams waits before querying twitch again for top streams
 update_interval = 60
+
 # the number of top games to get
 game_limit = 15
-# the number of streams to get for each game (as long as
-# they are over the viewer limit
+
+# the number of top streams to get for each game
 stream_limit = 15
-# the minimum number of viewers a stream must have to be
-# monitored
+
+# the minimum number of viewers a stream must have to be monitored
 viewer_limit = 200
-# the amount of seconds a stream is kept in the monitoring table before being
-# removed
+
+# a stream that has not been in the top streams for this many seconds is removed from
+# the database
 stream_ttl = 600
 
 print('connecting to database')
