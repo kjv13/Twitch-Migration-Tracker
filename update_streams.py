@@ -13,7 +13,7 @@ game_limit = 15
 stream_limit = 15
 
 # the minimum number of viewers a stream must have to be monitored
-viewer_limit = 200
+viewer_limit = 100
 
 # a stream that has not been in the top streams for this many seconds is removed from
 # the database
