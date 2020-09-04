@@ -84,7 +84,7 @@ class APIConnection:
         @return: a list of top game names
         """
         games = []
-        payload = {'limit': str(limit)}
+        payload = {'limit': str(limit), 'api_version': 5}
         result = self._send_request('https://api.twitch.tv/kraken/games/top',
                                     payload)
         for game in result['top']:
@@ -111,6 +111,7 @@ class APIConnection:
             'limit': str(stream_limit),
             'stream_type': 'live',
             'language': 'en'
+            ,'api_version': 5
         }
         result = self._send_request('https://api.twitch.tv/kraken/streams',
                                     payload)
